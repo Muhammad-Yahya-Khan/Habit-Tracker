@@ -13,7 +13,36 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(cors());
+// CORS - allow specific origins (reads ALLOWED_ORIGINS env or falls back to common defaults)
+const allowedOrigins = (
+    process.env.ALLOWED_ORIGINS ||
+    "https://habit-tracker-livid-zeta.vercel.app,https://habit-tracker-production-b88b.up.railway.app,http://localhost:5173,http://localhost:3000"
+)
+    .split(",")
+    .map((s) => s.trim());
+
+const corsOptions = {
+    origin: (origin, callback) => {
+        console.log("CORS check for origin:", origin);
+        // allow non-browser tools (no origin)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin)) return callback(null, true);
+        return callback(new Error(`CORS blocked for origin ${origin}`));
+    },
+    credentials: true,
+    optionsSuccessStatus: 200,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+};
+
+// Temporary origin logging for debugging
+app.use((req, res, next) => {
+    console.log("Request origin header:", req.headers.origin);
+    next();
+});
+
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions)); // handles preflight requests
 app.use(express.json());
 
 // MongoDB Connection
