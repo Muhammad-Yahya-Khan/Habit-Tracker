@@ -1,9 +1,7 @@
 import axios from "axios";
 
 // Base URL can be configured via Vite env VITE_API_URL
-const API_URL =
-    import.meta.env.VITE_API_URL ||
-    "https://habit-tracker-production-b88b.up.railway.app";
+const API_URL = import.meta.env.VITE_API_URL;
 
 const api = axios.create({
     baseURL: API_URL,
