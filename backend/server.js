@@ -21,58 +21,15 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-// CORS - allow specific origins (reads ALLOWED_ORIGINS env or falls back to common defaults)
-const allowedOrigins = (
-    process.env.ALLOWED_ORIGINS ||
-    "https://habit-tracker-livid-zeta.vercel.app,https://habit-tracker-production-b88b.up.railway.app,http://localhost:5173,http://localhost:3000"
-)
-    .split(",")
-    .map((s) => s.trim());
-
-const corsOptions = {
-    origin: (origin, callback) => {
-        console.log("CORS check for origin:", origin);
-        // allow non-browser tools (no origin)
-        if (!origin) return callback(null, true);
-        const allowed = allowedOrigins.includes(origin);
-        console.log("CORS allowed:", allowed);
-        return callback(null, allowed);
-    },
-    credentials: true,
-    optionsSuccessStatus: 200,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-};
-
-// Temporary origin logging for debugging
-app.use((req, res, next) => {
-    console.log("Request origin header:", req.headers.origin);
-    next();
-});
-
-// Optional testing: if ALLOW_ALL_ORIGINS=true, echo the Origin back
-// This makes preflight return Access-Control-Allow-* headers even if other middleware misbehaves.
-const allowAllForTesting = process.env.ALLOW_ALL_ORIGINS === "true";
-if (allowAllForTesting) {
-    app.use((req, res, next) => {
-        const origin = req.headers.origin || "*";
-        res.setHeader("Access-Control-Allow-Origin", origin);
-        res.setHeader(
-            "Access-Control-Allow-Headers",
-            "Content-Type, Authorization, X-Requested-With",
-        );
-        res.setHeader(
-            "Access-Control-Allow-Methods",
-            "GET,POST,PUT,DELETE,OPTIONS",
-        );
-        res.setHeader("Access-Control-Allow-Credentials", "true");
-        if (req.method === "OPTIONS") return res.sendStatus(200);
-        next();
-    });
-}
-
-app.use(cors(corsOptions));
-app.options("*", cors(corsOptions)); // handles preflight requests
+app.use(
+    cors({
+        origin: [
+            "http://localhost:5173",
+            "https://habit-tracker-livid-zeta.vercel.app/",
+        ],
+        credentials: true,
+    }),
+);
 app.use(express.json());
 
 // MongoDB Connection

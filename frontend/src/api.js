@@ -3,9 +3,10 @@ import axios from "axios";
 // Base URL can be configured via Vite env VITE_API_URL
 const API_URL = import.meta.env.VITE_API_URL;
 
+import axios from "axios";
+
 const api = axios.create({
-    baseURL: API_URL,
-    headers: { "Content-Type": "application/json" },
+    baseURL: import.meta.env.VITE_API_URL,
     withCredentials: true,
 });
 
