@@ -19,7 +19,9 @@ app.use(
             "http://localhost:5173", // local frontend
             "https://habit-tracker-livid-zeta.vercel.app/", // production frontend
         ],
-        credentials: true, // allow cookies
+        credentials: true, // allow cookies / auth headers
+        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allowedHeaders: ["Content-Type", "Authorization"], // headers you use
     }),
 );
 app.use(express.json());
