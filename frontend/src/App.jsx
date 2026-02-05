@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 
-const API_URL = "http://localhost:5000";
+const API_URL =
+    "https://habit-tracker-production-b88b.up.railway.app/api" ||
+    "http://localhost:5000";
 
 function App() {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
