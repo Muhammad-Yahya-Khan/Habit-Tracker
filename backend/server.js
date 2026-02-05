@@ -50,6 +50,27 @@ app.use((req, res, next) => {
     next();
 });
 
+// Optional testing: if ALLOW_ALL_ORIGINS=true, echo the Origin back
+// This makes preflight return Access-Control-Allow-* headers even if other middleware misbehaves.
+const allowAllForTesting = process.env.ALLOW_ALL_ORIGINS === "true";
+if (allowAllForTesting) {
+    app.use((req, res, next) => {
+        const origin = req.headers.origin || "*";
+        res.setHeader("Access-Control-Allow-Origin", origin);
+        res.setHeader(
+            "Access-Control-Allow-Headers",
+            "Content-Type, Authorization, X-Requested-With",
+        );
+        res.setHeader(
+            "Access-Control-Allow-Methods",
+            "GET,POST,PUT,DELETE,OPTIONS",
+        );
+        res.setHeader("Access-Control-Allow-Credentials", "true");
+        if (req.method === "OPTIONS") return res.sendStatus(200);
+        next();
+    });
+}
+
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions)); // handles preflight requests
 app.use(express.json());
