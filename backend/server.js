@@ -26,8 +26,9 @@ const corsOptions = {
         console.log("CORS check for origin:", origin);
         // allow non-browser tools (no origin)
         if (!origin) return callback(null, true);
-        if (allowedOrigins.includes(origin)) return callback(null, true);
-        return callback(new Error(`CORS blocked for origin ${origin}`));
+        const allowed = allowedOrigins.includes(origin);
+        console.log("CORS allowed:", allowed);
+        return callback(null, allowed);
     },
     credentials: true,
     optionsSuccessStatus: 200,
