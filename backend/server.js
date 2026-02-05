@@ -13,13 +13,15 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
+const allowAll = process.env.ALLOW_ALL_ORIGINS === "true";
 const allowedOrigins = process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim())
     : ["http://localhost:5173", "https://habit-tracker-livid-zeta.vercel.app"];
 
 const corsOptions = {
     origin: function (origin, callback) {
-        console.log("CORS check for origin:", origin);
+        console.log("CORS check for origin:", origin, "allowAll=", allowAll);
+        if (allowAll) return callback(null, true);
         if (!origin) return callback(null, true); // allow server-to-server or Postman requests
         const allowed = allowedOrigins.indexOf(origin) !== -1;
         if (!allowed) console.warn(`CORS blocked for origin ${origin}`);

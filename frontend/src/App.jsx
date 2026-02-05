@@ -1,8 +1,13 @@
 import { useState, useEffect } from "react";
-
-const API_URL =
-    "https://habit-tracker-production-b88b.up.railway.app" ||
-    "http://localhost:5000";
+import {
+    register as apiRegister,
+    login as apiLogin,
+    fetchHabits as apiFetchHabits,
+    addHabit as apiAddHabit,
+    toggleHabit as apiToggleHabit,
+    deleteHabit as apiDeleteHabit,
+    setAuthToken,
+} from "./api";
 
 function App() {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -27,9 +32,10 @@ function App() {
         const token = localStorage.getItem("token");
         const savedUser = localStorage.getItem("user");
         if (token && savedUser) {
+            setAuthToken(token);
             setIsLoggedIn(true);
             setUser(JSON.parse(savedUser));
-            fetchHabits(token);
+            loadHabits();
         }
     }, []);
 
@@ -46,23 +52,15 @@ function App() {
         setError("");
 
         try {
-            const response = await fetch(`${API_URL}/auth/register`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(formData),
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.message || "Registration failed");
-            }
+            const res = await apiRegister(formData);
+            const data = res.data;
 
             localStorage.setItem("token", data.token);
             localStorage.setItem("user", JSON.stringify(data.user));
+            setAuthToken(data.token);
             setUser(data.user);
             setIsLoggedIn(true);
-            fetchHabits(data.token);
+            loadHabits();
             setFormData({ username: "", email: "", password: "" });
         } catch (err) {
             setError(err.message);
@@ -77,26 +75,18 @@ function App() {
         setError("");
 
         try {
-            const response = await fetch(`${API_URL}/auth/login`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    email: formData.email,
-                    password: formData.password,
-                }),
+            const res = await apiLogin({
+                email: formData.email,
+                password: formData.password,
             });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.message || "Login failed");
-            }
+            const data = res.data;
 
             localStorage.setItem("token", data.token);
             localStorage.setItem("user", JSON.stringify(data.user));
+            setAuthToken(data.token);
             setUser(data.user);
             setIsLoggedIn(true);
-            fetchHabits(data.token);
+            loadHabits();
             setFormData({ username: "", email: "", password: "" });
         } catch (err) {
             setError(err.message);
@@ -116,15 +106,10 @@ function App() {
 
     // ==================== HABIT FUNCTIONS ====================
 
-    const fetchHabits = async (token = localStorage.getItem("token")) => {
+    const loadHabits = async () => {
         try {
-            const response = await fetch(`${API_URL}/habits`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            const data = await response.json();
-            if (response.ok) {
-                setHabits(data);
-            }
+            const res = await apiFetchHabits();
+            setHabits(res.data);
         } catch (err) {
             console.error("Error fetching habits:", err);
         }
@@ -135,19 +120,9 @@ function App() {
         if (!newHabitName.trim()) return;
 
         try {
-            const response = await fetch(`${API_URL}/habits`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
-                },
-                body: JSON.stringify({ name: newHabitName }),
-            });
-
-            if (response.ok) {
-                setNewHabitName("");
-                fetchHabits();
-            }
+            await apiAddHabit(newHabitName);
+            setNewHabitName("");
+            loadHabits();
         } catch (err) {
             console.error("Error adding habit:", err);
         }
@@ -155,16 +130,8 @@ function App() {
 
     const toggleHabit = async (id) => {
         try {
-            const response = await fetch(`${API_URL}/habits/${id}`, {
-                method: "PUT",
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
-                },
-            });
-
-            if (response.ok) {
-                fetchHabits();
-            }
+            await apiToggleHabit(id);
+            loadHabits();
         } catch (err) {
             console.error("Error toggling habit:", err);
         }
@@ -174,16 +141,8 @@ function App() {
         if (!confirm("Are you sure you want to delete this habit?")) return;
 
         try {
-            const response = await fetch(`${API_URL}/habits/${id}`, {
-                method: "DELETE",
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
-                },
-            });
-
-            if (response.ok) {
-                fetchHabits();
-            }
+            await apiDeleteHabit(id);
+            loadHabits();
         } catch (err) {
             console.error("Error deleting habit:", err);
         }
