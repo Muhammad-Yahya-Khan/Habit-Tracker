@@ -9,6 +9,14 @@ import { authenticateToken } from "./middleware/auth.js";
 
 dotenv.config();
 
+// Fail fast if required environment variables are missing
+if (!process.env.MONGODB_URI || !process.env.JWT_SECRET) {
+    console.error(
+        "Missing required environment variables. Please set MONGODB_URI and JWT_SECRET.",
+    );
+    process.exit(1);
+}
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
