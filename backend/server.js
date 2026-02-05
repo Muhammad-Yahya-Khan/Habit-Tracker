@@ -13,18 +13,26 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(
-    cors({
-        origin: [
-            "http://localhost:5173", // local frontend
-            "https://habit-tracker-livid-zeta.vercel.app", // production frontend
-        ],
-        credentials: true, // allow cookies / auth headers
-        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        allowedHeaders: ["Content-Type", "Authorization"], // headers you use
-    }),
-);
-app.options("*", cors());
+
+const corsOptions = {
+    origin: function (origin, callback) {
+        if (!origin) return callback(null, true); // allow server-to-server or Postman requests
+        if (allowedOrigins.indexOf(origin) === -1) {
+            return callback(
+                new Error(`CORS blocked for origin ${origin}`),
+                false,
+            );
+        }
+        return callback(null, true);
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+};
+
+// Use the same CORS config for all routes and preflight
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions)); // handles preflight requests
 
 app.use(express.json());
 
