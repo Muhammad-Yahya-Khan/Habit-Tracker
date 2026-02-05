@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 
 const API_URL =
-    "https://habit-tracker-production-b88b.up.railway.app/api" ||
+    "https://habit-tracker-production-b88b.up.railway.app" ||
     "http://localhost:5000";
 
 function App() {
