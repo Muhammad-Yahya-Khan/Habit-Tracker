@@ -13,7 +13,15 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(cors());
+app.use(
+    cors({
+        origin: [
+            "http://localhost:5173", // local frontend
+            "https://habit-tracker-livid-zeta.vercel.app/", // production frontend
+        ],
+        credentials: true, // allow cookies
+    }),
+);
 app.use(express.json());
 
 // MongoDB Connection
