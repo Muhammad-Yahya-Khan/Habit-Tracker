@@ -15,7 +15,7 @@ const PORT = process.env.PORT || 5000;
 // Middleware
 app.use(
     cors({
-        origin: "https://habit-tracker-livid-zeta.vercel.app",
+        origin: "https://habit-tracker-livid-zeta.vercel.app"
     }),
 );
 app.use(express.json());
