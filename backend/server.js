@@ -1,8 +1,11 @@
+// server.js
 import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
+import cookieParser from "cookie-parser";
+
 import User from "./models/User.js";
 import Habit from "./models/Habit.js";
 import { authenticateToken } from "./middleware/auth.js";
@@ -12,11 +15,18 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
-app.use(cors());
-app.use(express.json());
+// ==================== MIDDLEWARE ====================
+app.use(
+    cors({
+        origin: "https://habit-tracker-livid-zeta.vercel.app", // your Vercel frontend URL
+        credentials: true, // allows cookies to be sent cross-origin
+    }),
+);
 
-// MongoDB Connection
+app.use(express.json());
+app.use(cookieParser());
+
+// ==================== DATABASE ====================
 mongoose
     .connect(process.env.MONGODB_URI)
     .then(() => console.log("✅ MongoDB connected successfully"))
@@ -29,28 +39,33 @@ app.post("/auth/register", async (req, res) => {
     try {
         const { username, email, password } = req.body;
 
-        // Check if user already exists
         const existingUser = await User.findOne({
             $or: [{ email }, { username }],
         });
+
         if (existingUser) {
             return res.status(400).json({ message: "User already exists" });
         }
 
-        // Create new user
         const user = new User({ username, email, password });
         await user.save();
 
-        // Generate JWT token
         const token = jwt.sign(
             { userId: user._id, username: user.username },
             process.env.JWT_SECRET,
             { expiresIn: "7d" },
         );
 
+        // ✅ Set token as cookie
+        res.cookie("token", token, {
+            httpOnly: true,
+            secure: true, // HTTPS only
+            sameSite: "None", // cross-origin
+            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        });
+
         res.status(201).json({
             message: "User registered successfully",
-            token,
             user: { id: user._id, username: user.username, email: user.email },
         });
     } catch (error) {
@@ -66,32 +81,34 @@ app.post("/auth/login", async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        // Find user
         const user = await User.findOne({ email });
-        if (!user) {
+        if (!user)
             return res
                 .status(401)
                 .json({ message: "Invalid email or password" });
-        }
 
-        // Check password
         const isMatch = await user.comparePassword(password);
-        if (!isMatch) {
+        if (!isMatch)
             return res
                 .status(401)
                 .json({ message: "Invalid email or password" });
-        }
 
-        // Generate JWT token
         const token = jwt.sign(
             { userId: user._id, username: user.username },
             process.env.JWT_SECRET,
             { expiresIn: "7d" },
         );
 
+        // ✅ Set token as cookie
+        res.cookie("token", token, {
+            httpOnly: true,
+            secure: true, // HTTPS only
+            sameSite: "None", // cross-origin
+            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        });
+
         res.json({
             message: "Login successful",
-            token,
             user: { id: user._id, username: user.username, email: user.email },
         });
     } catch (error) {
@@ -104,7 +121,7 @@ app.post("/auth/login", async (req, res) => {
 
 // ==================== HABIT ROUTES (Protected) ====================
 
-// Get all habits for logged-in user
+// Get all habits
 app.get("/habits", authenticateToken, async (req, res) => {
     try {
         const habits = await Habit.find({ userId: req.user.userId }).sort({
@@ -119,14 +136,11 @@ app.get("/habits", authenticateToken, async (req, res) => {
     }
 });
 
-// Create new habit
+// Add habit
 app.post("/habits", authenticateToken, async (req, res) => {
     try {
         const { name } = req.body;
-        const habit = new Habit({
-            name,
-            userId: req.user.userId,
-        });
+        const habit = new Habit({ name, userId: req.user.userId });
         await habit.save();
         res.status(201).json(habit);
     } catch (error) {
@@ -137,17 +151,14 @@ app.post("/habits", authenticateToken, async (req, res) => {
     }
 });
 
-// Toggle habit (mark as done/undone for today)
+// Toggle habit
 app.put("/habits/:id", authenticateToken, async (req, res) => {
     try {
         const habit = await Habit.findOne({
             _id: req.params.id,
             userId: req.user.userId,
         });
-
-        if (!habit) {
-            return res.status(404).json({ message: "Habit not found" });
-        }
+        if (!habit) return res.status(404).json({ message: "Habit not found" });
 
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -163,20 +174,16 @@ app.put("/habits/:id", authenticateToken, async (req, res) => {
             );
 
             if (daysDiff === 0) {
-                // Same day - uncheck (reset streak)
                 habit.lastChecked = null;
                 habit.streak = 0;
             } else if (daysDiff === 1) {
-                // Consecutive day - increment streak
                 habit.lastChecked = new Date();
                 habit.streak += 1;
             } else {
-                // Broke streak - reset to 1
                 habit.lastChecked = new Date();
                 habit.streak = 1;
             }
         } else {
-            // First time checking
             habit.lastChecked = new Date();
             habit.streak = 1;
         }
@@ -198,11 +205,7 @@ app.delete("/habits/:id", authenticateToken, async (req, res) => {
             _id: req.params.id,
             userId: req.user.userId,
         });
-
-        if (!habit) {
-            return res.status(404).json({ message: "Habit not found" });
-        }
-
+        if (!habit) return res.status(404).json({ message: "Habit not found" });
         res.json({ message: "Habit deleted successfully" });
     } catch (error) {
         res.status(500).json({
@@ -212,7 +215,7 @@ app.delete("/habits/:id", authenticateToken, async (req, res) => {
     }
 });
 
-// Start server
+// ==================== START SERVER ====================
 app.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
 });

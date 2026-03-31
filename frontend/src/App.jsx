@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import {
-    register as apiRegister,
-    login as apiLogin,
-    fetchHabits as apiFetchHabits,
-    addHabit as apiAddHabit,
-    toggleHabit as apiToggleHabit,
-    deleteHabit as apiDeleteHabit,
     setAuthToken,
+    apiRegister,
+    apiLogin,
+    apiFetchHabits,
+    apiAddHabit,
+    apiToggleHabit,
+    apiDeleteHabit,
 } from "./api";
 
 function App() {
